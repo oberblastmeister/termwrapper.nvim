@@ -13,7 +13,13 @@ end
 
 lua require'termwrapper'.setup()
 
-command! -nargs=0 Tnew lua require'termwrapper'.new()
+command! -nargs=0 T lua require'termwrapper'.new()
+
+command! -nargs=* Tsend lua require'termwrapper'.send(<f-args>)
+
+command! -nargs=0 TsendLine lua require'termwrapper'.send_line()
+
+command! -nargs=0 TsendLineAdvance lua require'termwrapper'.send_line_advance()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
