@@ -1,20 +1,48 @@
+local api = vim.api
+
 local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
-local terminals = 0
+local terminals = {}
 
-local function dec_terminals()
-  terminals = terminals - 1
+local function augroup(name)
+  vim.cmd("augroup " .. name)
+  vim.cmd("autocmd!")
+  vim.cmd("augroup END")
 end
+
+local default_autocmd_opts = {
+  pat = "term://*;termwrapper*",
+  once = false,
+  nested = false,
+  group = "TermWrapper",
+}
+
+local function custom_autocmd(event, vim_command, opts)
+  opts = vim.tbl_extend("keep", opts or {}, default_autocmd_opts)
+  local command = "autocmd"
+  if opts.group then command = command .. " " .. opts.group end
+  command = command .. " " .. event .. " " .. opts.pat
+  if opts.once then command = command .. " ++once" end
+  if opts.nested then command = command .. " ++nested" end
+  command = command .. " " .. vim_command
+  vim.cmd(command)
+end
+
 
 function TermWrapper.new()
   local self = setmetatable({}, TermWrapper)
   vim.cmd [[terminal]]
-  self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. terminals
-  self.number = terminals
+  self.number = vim.tbl_count(terminals) + 1
+  print(self.number)
+  self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
   self.job_id = vim.b.terminal_job_id
   vim.cmd('file ' .. self.filename)
-  inc_terminals()
+  terminals[self.number] = self
+  custom_autocmd('TermClose', string.format('lua require("termwrapper/utils").terminals[%s]:on_close()', self.number), {
+    pat = self.filename,
+    once = true,
+  })
   return self
 end
 
@@ -23,13 +51,26 @@ function TermWrapper:clear()
 end
 
 function TermWrapper:send(command)
-  vim.fn.jobsend(self.job_id, command .. '\n')
+  vim.fn.chansend(self.job_id, command .. '\n')
 end
 
-function TermWrapper.on_close()
-  -- sending a any random key will close the terminal
-  api.nvim_feedkeys('q', 'n', true)
-  dec_terminals()
+function TermWrapper:on_close()
+  if vim.g.termwrapper_autoclose == 1 then
+    api.nvim_feedkeys('q', 'n', true)
+  end
+
+  -- remove the terminal from the global list
+  terminals[self.number] = nil
 end
 
-return TermWrapper
+function TermWrapper:close()
+  self.send('exit')
+end
+
+return {
+  TermWrapper = TermWrapper,
+  terminals = terminals,
+  custom_autocmd = custom_autocmd,
+  augroup = augroup,
+  on_close = on_close,
+}
