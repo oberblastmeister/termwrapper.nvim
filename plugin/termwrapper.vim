@@ -15,8 +15,8 @@ if ! exists('g:termwrapper_autoclose')
   let g:termwrapper_autoclose = 1
 endif
 
-if ! exists('g:termwrapper_always_autoinsert')
-  let g:termwrapper_always_autoinsert = 0
+if ! exists('g:termwrapper_winenter_autoinsert')
+  let g:termwrapper_winenter_autoinsert = 0
 endif
 
 if ! exists('g:termwrapper_default_height')
