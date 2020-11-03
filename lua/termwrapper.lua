@@ -5,6 +5,10 @@ TermWrapper.__index = TermWrapper
 
 local terminals = {}
 
+local function get_termwrapper(number)
+  return terminals[number]
+end
+
 local function augroup(name)
   vim.cmd("augroup " .. name)
   vim.cmd("autocmd!")
@@ -39,15 +43,17 @@ function TermWrapper.new()
   self.number = vim.tbl_count(terminals) + 1
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
   self.channel = vim.bo.channel
+  self.bufnr = vim.fn.bufnr(vim.fn.bufname())
   vim.cmd('keepalt file ' .. self.filename)
   vim.b.term_title = self.filename
-  custom_autocmd('TermClose', string.format('lua require("termwrapper").terminals[%s]:on_close()', self.number), {
+  custom_autocmd('TermClose', string.format('lua require("termwrapper").get_termwrapper(%s):on_close()', self.number), {
     pat = self.filename,
     once = true,
   })
-  if vim.g.termwrapper_autoinsert == 1 then
+  if vim.g.termwrapper_open_autoinsert == 1 then
     vim.cmd [[startinsert]]
   end
+  vim.cmd [[set filetype=termwrapper]]
   terminals[self.number] = self
   return self
 end
@@ -69,8 +75,52 @@ function TermWrapper:on_close()
   terminals[self.number] = nil
 end
 
-function TermWrapper:close()
+function TermWrapper:exit()
   self.send('exit')
+end
+
+local function custom_open_window()
+  vim.cmd(string.format('belowright %ssplit', vim.g.termwrapper_default_height))
+end
+
+function TermWrapper:toggle()
+  local winid = vim.fn.bufwinid(self.bufnr)
+  if winid == -1 then
+    custom_open_window()
+    vim.cmd(self.bufnr .. 'buffer')
+  else
+    api.nvim_win_close(winid, false)
+  end
+  if vim.g.termwrapper_toggle_auto_insert == 1 then
+    vim.cmd [[startinsert]]
+  end
+end
+
+local function get_first_existing(table)
+  for _, item in ipairs(table) do return item end
+end
+
+local function toggle(number)
+  if number == nil then
+    number = 1
+  end
+  local termwrapper = get_termwrapper(number)
+  -- if there is not termwrapper for the number, get the first existing termwrapper
+  if termwrapper == nil then
+    termwrapper = get_first_existing(terminals)
+  end
+
+  -- if there are no existing termwrappers anywhere, create a new one if the option is set
+  if termwrapper == nil then
+    if vim.g.termwrapper_open_new_toggle == 1 then
+      custom_open_window()
+      TermWrapper.new()
+    else
+      print('There are no termwrappers existing. Set g:termwrapper_open_new_toggle to open a new one when there is none in toggling.')
+    end
+  else
+    termwrapper:toggle()
+  end
 end
 
 local function new()
@@ -121,14 +171,18 @@ end
 
 local function setup()
   augroup('TermWrapper')
+  -- if vim.g.termwrapper_always_autoinsert == 1 then
+  --   custom_autocmd('FileType termwrapper', 'startinsert')
+  -- end
 end
 
 return {
   TermWrapper = TermWrapper,
-  terminals = terminals,
   setup = setup,
   send = send,
   send_line = send_line,
   send_line_advance = send_line_advance,
+  get_termwrapper = get_termwrapper,
   new = new,
+  toggle = toggle,
 }
