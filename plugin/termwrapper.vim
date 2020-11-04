@@ -37,8 +37,6 @@ command! -nargs=0 TsendLine lua require'termwrapper'.send_line()
 
 command! -nargs=0 TsendLineAdvance lua require'termwrapper'.send_line_advance()
 
-command! -nargs=* Ttoggle lua require'termwrapper'.get_termwrapper(<f-args>):toggle()
-
 command! -nargs=* Ttoggle lua require'termwrapper'.toggle(<f-args>)
 
 let &cpo = s:save_cpo
