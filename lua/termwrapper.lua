@@ -80,7 +80,7 @@ function TermWrapper:exit()
 end
 
 local function custom_open_window()
-  vim.cmd(string.format('belowright %ssplit', vim.g.termwrapper_default_height))
+  vim.cmd(vim.g.termwrapper_default_window_command)
 end
 
 function TermWrapper:toggle()

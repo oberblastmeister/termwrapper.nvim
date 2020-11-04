@@ -19,8 +19,8 @@ if ! exists('g:termwrapper_winenter_autoinsert')
   let g:termwrapper_winenter_autoinsert = 0
 endif
 
-if ! exists('g:termwrapper_default_height')
-  let g:termwrapper_default_height = 13
+if ! exists('g:termwrapper_default_window_command')
+  let g:termwrapper_default_window_command = 'belowright 13split'
 endif
 
 if ! exists('g:termwrapper_open_new_toggle')

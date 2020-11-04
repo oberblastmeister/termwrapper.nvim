@@ -32,3 +32,11 @@ use 'oberblastmeister/termwrapper.nvim'
 - `TsendLine`: send the current line to the termwrapper
 - `Tsend`: send argument to the terminal
 - `TsendLineAdvance`: same as `TsendLine` but goes to the next non-empty line in the file
+
+## Options
+
+- `g:termwrapper_open_autoinsert`: auto insert when opening a new termwrapper, default 1
+- `g:termwrapper_toggle_auto_insert`: auto insert when toggling the termwrapper, default 1
+- `g:termwrapper_autoclose`: auto close the termwrapper no (`[Process exited 0]` messages and then having to press a key to quit), default 1
+- `g:termwrapper_winenter_autoinsert`: auto insert when entering the termwrapper window, default 0
+- `g:termwrapper_default_window_command`: the default command to open a new window when toggling, default `belowright 13split`
