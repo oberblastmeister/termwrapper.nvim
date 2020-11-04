@@ -87,13 +87,17 @@ function TermWrapper:toggle()
   local winid = vim.fn.bufwinid(self.bufnr)
   if winid == -1 then
     custom_open_window()
-    vim.cmd(self.bufnr .. 'buffer')
+    self:enter()
     if vim.g.termwrapper_toggle_auto_insert == 1 then
       vim.cmd [[startinsert]]
     end
   else
     api.nvim_win_close(winid, false)
   end
+end
+
+function TermWrapper:enter()
+  vim.cmd(self.bufnr .. 'buffer')
 end
 
 local function get_first_existing(table)
