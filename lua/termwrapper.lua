@@ -132,7 +132,7 @@ local function new()
 end
 
 local function send(...)
-  local opts = {...}
+  local opts = vim.tbl_flatten {...}
   local command = opts[1]
 
   for idx = 2, vim.tbl_count(opts) do
@@ -146,6 +146,13 @@ local function send(...)
       terminals[1]:send(command)
     end
   end
+end
+
+local function send_or_toggle(...)
+  if terminals[1] == nil then
+    toggle()
+  end
+  send(...)
 end
 
 -- terminal id is optional, will send to 1 by default
@@ -184,6 +191,7 @@ return {
   TermWrapper = TermWrapper,
   setup = setup,
   send = send,
+  send_or_toggle = send_or_toggle,
   send_line = send_line,
   send_line_advance = send_line_advance,
   get_termwrapper = get_termwrapper,
