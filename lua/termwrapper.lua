@@ -5,6 +5,7 @@ local utils = require("termwrapper/utils")
 local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
+-- all of the termwrappers that have been created
 local termwrappers = {}
 
 local function get_current_termwrapper()
@@ -51,6 +52,12 @@ do
   end
 end
 
+-- things to execute on termwrapper new creation
+local function on_new()
+  if TermWrapperConfig.open_autoinsert then
+    vim.cmd [[startinsert]]
+  end
+end
 
 -- creates a new termwrapper in the current window
 function TermWrapper.new()
@@ -66,11 +73,12 @@ function TermWrapper.new()
     pat = self.filename,
     once = true,
   })
-  if vim.g.termwrapper_open_autoinsert == 1 then
-    vim.cmd [[startinsert]]
-  end
+  on_new()
   vim.cmd [[set filetype=termwrapper]]
   termwrappers[self.number] = self
+
+  utils.dump_debug(self)
+
   return self
 end
 
@@ -92,7 +100,7 @@ function TermWrapper:set_name(name)
 end
 
 function TermWrapper:on_close()
-  if vim.g.termwrapper_autoclose == 1 then
+  if TermWrapperConfig.autoclose then
     api.nvim_feedkeys('q', 'n', true)
   end
 
@@ -105,17 +113,23 @@ function TermWrapper:exit()
 end
 
 local function custom_open_window()
-  vim.cmd(vim.g.termwrapper_default_window_command)
+  vim.cmd(TermWrapperConfig.default_window_command)
+end
+
+-- commands to execute when toggling
+local function on_toggle()
+  if TermWrapperConfig.toggle_autoinsert then
+    utils.debug("Starting insert for toggle")
+    vim.cmd [[startinsert]]
+  end
 end
 
 function TermWrapper:toggle()
   local winid = vim.fn.bufwinid(self.bufnr)
   if winid == -1 then
     custom_open_window()
-    self:enter()
-    if vim.g.termwrapper_toggle_auto_insert == 1 then
-      vim.cmd [[startinsert]]
-    end
+    vim.cmd(self.bufnr .. 'buffer')
+    on_toggle()
   else
     api.nvim_win_close(winid, false)
   end
@@ -149,7 +163,7 @@ local function toggle(number)
 
   -- if there are no existing termwrappers anywhere, create a new one if the option is set
   if termwrapper == nil then
-    if vim.g.termwrapper_open_new_toggle == 1 then
+    if TermWrapperConfig.open_new_toggle then
       custom_open_window()
       TermWrapper.new()
     else
@@ -213,27 +227,17 @@ local function send_line_advance(terminal_id)
   end
 end
 
-local setup_config
-do
-  local default_config = {
-    open_autoinsert = 1,
-    toggle_autoinsert = 1,
-    autoclose = 1,
-    winenter_autoinsert = 0,
-    default_window_command = "belowright 13split",
-    open_new_toggle = 1,
-    log = 0
-  }
-
-  setup_config = function(user_config)
-    return vim.tbl_extend("keep", user_config, default_config)
-  end
-end
-
 local function setup(user_config)
-  setup_config(user_config)
+  -- global variable TermWrapperConfig
+  TermWrapperConfig = require"termwrapper/config".setup(user_config)
+
+  utils.info("Starting logging for termwrapper")
+
+  utils.dump_debug(TermWrapperConfig)
+
   augroup('TermWrapper')
-  if vim.g.termwrapper_winenter_autoinsert == 1 then
+
+  if TermWrapperConfig.termwrapper_winenter_autoinsert then
     custom_autocmd('WinEnter', 'startinsert')
   end
 end
