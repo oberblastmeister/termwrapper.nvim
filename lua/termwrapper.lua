@@ -1,11 +1,26 @@
+local vim = vim
 local api = vim.api
+local utils = require("termwrapper/utils")
 
 local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
 local termwrappers = {}
 
+local function get_current_termwrapper()
+  local current_bufnr = api.nvim_get_current_buf()
+  for _, termwrapper in ipairs(termwrappers) do
+    if termwrapper.bufnr == current_bufnr then
+      return termwrapper
+    end
+  end
+end
+
+-- gets the termwrapper specified by the number. If the number is zero or nil, will get the current termwrapper
 local function get_termwrapper(number)
+  if number == nil or number == 0 then
+    return get_current_termwrapper()
+  end
   return termwrappers[number]
 end
 
@@ -44,7 +59,7 @@ function TermWrapper.new()
   self.number = vim.tbl_count(termwrappers) + 1
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
   self.channel = vim.bo.channel
-  self.bufnr = vim.fn.bufnr(vim.fn.bufname())
+  self.bufnr = api.nvim_get_current_buf()
   vim.cmd('keepalt file ' .. self.filename)
   vim.b.term_title = self.filename
   custom_autocmd('TermClose', string.format('lua require("termwrapper").get_termwrapper(%s):on_close()', self.number), {
@@ -59,12 +74,21 @@ function TermWrapper.new()
   return self
 end
 
+-- convenience method to send clear to the termwrapper
 function TermWrapper:clear()
   self:send("clear")
 end
 
+-- sends something to the termwrapper (adds newline at the end)
 function TermWrapper:send(command)
   vim.fn.chansend(self.channel, command .. '\n')
+end
+
+-- sets then name of the termwrapper (keeps alternate file)
+function TermWrapper:set_name(name)
+  local command = string.format("keepalt call nvim_buf_set_name(%s, \"%s\")", self.bufnr, name)
+  print(command)
+  vim.cmd(command)
 end
 
 function TermWrapper:on_close()
