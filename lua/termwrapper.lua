@@ -213,7 +213,25 @@ local function send_line_advance(terminal_id)
   end
 end
 
-local function setup()
+local setup_config
+do
+  local default_config = {
+    open_autoinsert = 1,
+    toggle_autoinsert = 1,
+    autoclose = 1,
+    winenter_autoinsert = 0,
+    default_window_command = "belowright 13split",
+    open_new_toggle = 1,
+    log = 0
+  }
+
+  setup_config = function(user_config)
+    return vim.tbl_extend("keep", user_config, default_config)
+  end
+end
+
+local function setup(user_config)
+  setup_config(user_config)
   augroup('TermWrapper')
   if vim.g.termwrapper_winenter_autoinsert == 1 then
     custom_autocmd('WinEnter', 'startinsert')
