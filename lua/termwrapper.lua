@@ -3,10 +3,10 @@ local api = vim.api
 local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
-local terminals = {}
+local termwrappers = {}
 
 local function get_termwrapper(number)
-  return terminals[number]
+  return termwrappers[number]
 end
 
 local function augroup(name)
@@ -37,10 +37,11 @@ do
 end
 
 
+-- creates a new termwrapper in the current window
 function TermWrapper.new()
   local self = setmetatable({}, TermWrapper)
   vim.cmd [[terminal]]
-  self.number = vim.tbl_count(terminals) + 1
+  self.number = vim.tbl_count(termwrappers) + 1
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
   self.channel = vim.bo.channel
   self.bufnr = vim.fn.bufnr(vim.fn.bufname())
@@ -54,7 +55,7 @@ function TermWrapper.new()
     vim.cmd [[startinsert]]
   end
   vim.cmd [[set filetype=termwrapper]]
-  terminals[self.number] = self
+  termwrappers[self.number] = self
   return self
 end
 
@@ -72,7 +73,7 @@ function TermWrapper:on_close()
   end
 
   -- remove the terminal from the global list
-  terminals[self.number] = nil
+  termwrappers[self.number] = nil
 end
 
 function TermWrapper:exit()
@@ -104,6 +105,14 @@ local function get_first_existing(table)
   for _, item in ipairs(table) do return item end
 end
 
+-- gets the first existing termwrapper
+local function get_first_existing_termwrapper()
+  return get_first_existing(termwrappers)
+end
+
+-- Toggles the termwrapper or creates a new one if there are know termwrappers.
+-- The number arg can be provided to toggle a specific termwrapper but if it is not provided, this will toggle number 1 by default.
+-- If the number is not found, will toggle the first termwrapper found
 local function toggle(number)
   if number == nil then
     number = 1
@@ -111,7 +120,7 @@ local function toggle(number)
   local termwrapper = get_termwrapper(number)
   -- if there is not termwrapper for the number, get the first existing termwrapper
   if termwrapper == nil then
-    termwrapper = get_first_existing(terminals)
+    termwrapper = get_first_existing_termwrapper()
   end
 
   -- if there are no existing termwrappers anywhere, create a new one if the option is set
@@ -137,19 +146,19 @@ local function send(...)
 
   for idx = 2, vim.tbl_count(opts) do
     local terminal_num = opts[idx]
-    local terminal = terminals[tonumber(terminal_num)];
+    local terminal = termwrappers[tonumber(terminal_num)];
     terminal:send(command)
   end
 
   if opts[2] == nil then
-    if terminals[1] ~= nil then
-      terminals[1]:send(command)
+    if termwrappers[1] ~= nil then
+      termwrappers[1]:send(command)
     end
   end
 end
 
 local function send_or_toggle(...)
-  if terminals[1] == nil then
+  if termwrappers[1] == nil then
     toggle()
   end
   send(...)
