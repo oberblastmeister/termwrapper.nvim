@@ -35,4 +35,34 @@ function M.warning(...)
   end
 end
 
+function M.get_first_existing(table)
+  for _, item in ipairs(table) do return item end
+end
+
+function M.augroup(name)
+  vim.cmd("augroup " .. name)
+  vim.cmd("autocmd!")
+  vim.cmd("augroup END")
+end
+
+do
+  local default_autocmd_opts = {
+    pat = "term://*;termwrapper*",
+    once = false,
+    nested = false,
+    group = "TermWrapper",
+  }
+
+  M.custom_autocmd = function(event, vim_command, opts)
+    opts = vim.tbl_extend("keep", opts or {}, default_autocmd_opts)
+    local command = "autocmd"
+    if opts.group then command = command .. " " .. opts.group end
+    command = command .. " " .. event .. " " .. opts.pat
+    if opts.once then command = command .. " ++once" end
+    if opts.nested then command = command .. " ++nested" end
+    command = command .. " " .. vim_command
+    vim.cmd(command)
+  end
+end
+
 return M

@@ -4,6 +4,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 command! -nargs=0 T lua require'termwrapper'.new()
+command! -nargs=0 T lua require'termwrapper'.TermWrapper.new()
 
 command! -nargs=* Tsend lua require'termwrapper'.send(<f-args>)
 
