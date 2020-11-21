@@ -12,6 +12,8 @@ local function get_current_termwrapper()
   local current_bufnr = api.nvim_get_current_buf()
   for _, termwrapper in ipairs(termwrappers) do
     if termwrapper.bufnr == current_bufnr then
+      utils.debug("Got current termwrapper:")
+      utils.dump_debug(termwrapper)
       return termwrapper
     end
   end
@@ -60,10 +62,16 @@ local function on_new()
 end
 
 -- creates a new termwrapper in the current window
-function TermWrapper.new()
+function TermWrapper.new(number)
   local self = setmetatable({}, TermWrapper)
   vim.cmd [[terminal]]
-  self.number = vim.tbl_count(termwrappers) + 1
+
+  if get_termwrapper(number) ~= nil then
+    utils.error("There is already a termwrapper for the given number: ", number)
+    return
+  end
+
+  self.number = number or vim.tbl_count(termwrappers) + 1
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
   self.channel = vim.bo.channel
   self.bufnr = api.nvim_get_current_buf()
@@ -77,6 +85,7 @@ function TermWrapper.new()
   vim.cmd [[set filetype=termwrapper]]
   termwrappers[self.number] = self
 
+  utils.debug("Created a new termwrapper:")
   utils.dump_debug(self)
 
   return self
@@ -151,11 +160,12 @@ end
 -- Toggles the termwrapper or creates a new one if there are know termwrappers.
 -- The number arg can be provided to toggle a specific termwrapper but if it is not provided, this will toggle number 1 by default.
 -- If the number is not found, will toggle the first termwrapper found
-local function toggle(number)
+local function toggle_or_first(number)
   if number == nil then
     number = 1
   end
   local termwrapper = get_termwrapper(number)
+
   -- if there is not termwrapper for the number, get the first existing termwrapper
   if termwrapper == nil then
     termwrapper = get_first_existing_termwrapper()
@@ -163,19 +173,36 @@ local function toggle(number)
 
   -- if there are no existing termwrappers anywhere, create a new one if the option is set
   if termwrapper == nil then
-    if TermWrapperConfig.open_new_toggle then
-      custom_open_window()
-      TermWrapper.new()
-    else
-      print('There are no termwrappers existing. Set g:termwrapper_open_new_toggle to open a new one when there is none in toggling.')
-    end
+    print('There are no termwrapper existing.')
   else
     termwrapper:toggle()
   end
 end
 
-local function new()
-  TermWrapper.new()
+local function toggle_or_new(number)
+  -- defaults to one
+  if number == nil then
+    number = 1
+  end
+
+  local termwrapper = get_termwrapper(number)
+
+  -- if the termwrapper is new, create a new one
+  if termwrapper == nil then
+    new(number)
+  end
+end
+
+local function toggle_count()
+  local count = api.nvim_get_vvar("count1")
+  utils.debug("The count was: ", count)
+  toggle_or_new(count)
+end
+
+-- new helper method that opens window
+local function new(number)
+  custom_open_window()
+  TermWrapper.new(number)
 end
 
 local function send(...)
@@ -233,6 +260,7 @@ local function setup(user_config)
 
   utils.info("Starting logging for termwrapper")
 
+  utils.debug("TermWrapperConfig:")
   utils.dump_debug(TermWrapperConfig)
 
   augroup('TermWrapper')
@@ -251,5 +279,6 @@ return {
   send_line_advance = send_line_advance,
   get_termwrapper = get_termwrapper,
   new = new,
-  toggle = toggle,
+  toggle_or_first = toggle_or_first,
+  toggle_count = toggle_count,
 }

@@ -13,7 +13,9 @@ command! -nargs=0 TsendLine lua require'termwrapper'.send_line()
 
 command! -nargs=0 TsendLineAdvance lua require'termwrapper'.send_line_advance()
 
-command! -nargs=* Ttoggle lua require'termwrapper'.toggle(<f-args>)
+command! -nargs=* Ttoggle lua require'termwrapper'.toggle_or_new(<f-args>)
+
+nnoremap <expr> <Plug>(TermWrapperToggleNumber) "lua require'termwrapper'.get_termwrapper(" . v:count1 . '):toggle()'
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
