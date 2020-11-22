@@ -65,4 +65,13 @@ do
   end
 end
 
+function M.get_size(window)
+  if window == nil then
+    window = 0
+  end
+  local width = api.nvim_win_get_width(window)
+  local height = api.nvim_win_get_height(window)
+  return width, height
+end
+
 return M

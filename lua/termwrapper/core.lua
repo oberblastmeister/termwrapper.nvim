@@ -69,7 +69,8 @@ function TermWrapper.new(number)
   self.bufnr = api.nvim_get_current_buf()
 
   -- only used when toggling to restore window view
-  self.winsaveview = nil
+  self.width = api.nvim_win_get_width(0)
+  self.height = api.nvim_win_get_height(0)
 
   -- change the filename initialy
   vim.cmd('keepalt file ' .. self.filename)
@@ -123,14 +124,51 @@ function TermWrapper:exit()
   self.send('exit')
 end
 
+-- will return nil if the buffer cannot be found of there is no such window
+function TermWrapper:get_winid()
+  local winid = vim.fn.bufwinid(self.bufnr)
+  if winid == -1 then
+    return nil
+  else
+    return winid
+  end
+end
+
+-- resizes the termwrapper to the saved size
+function TermWrapper:resize()
+  local winid = self:get_winid()
+
+  if winid == nil then
+    utils.warning("The buffer does not exist or there is no such window.")
+    return
+  end
+
+  api.nvim_win_set_height(winid, self.height)
+  api.nvim_win_set_width(winid, self.width)
+end
+
+function TermWrapper:save_size()
+  local winid = self:get_winid()
+
+  if winid == nil then
+    utils.warning("The buffer does not exist or there is no such window.")
+    return
+  end
+
+  self.width = api.nvim_win_get_width(winid)
+  self.height = api.nvim_win_get_height(winid)
+end
+
 function TermWrapper:toggle()
   local winid = vim.fn.bufwinid(self.bufnr)
   if winid == -1 then
     vim.wo.winfixheight = true
     vim.cmd(TermWrapperConfig.default_window_command)
     vim.cmd(self.bufnr .. 'buffer')
+    self:resize()
     on_toggle()
   else
+    self:save_size()
     api.nvim_win_close(winid, false)
   end
 end
