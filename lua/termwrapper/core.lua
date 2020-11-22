@@ -56,18 +56,35 @@ function TermWrapper.new(number)
     return
   end
 
+  -- the number of the terminal, starts from 1
   self.number = number or vim.tbl_count(termwrappers) + 1
+
+  -- the filename of the terminal, can be changed
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
+
+  -- the channel, used to send commands to it
   self.channel = vim.bo.channel
+
+  -- the buffer number
   self.bufnr = api.nvim_get_current_buf()
+
+  -- only used when toggling to restore window view
+  self.winsaveview = nil
+
+  -- change the filename initialy
   vim.cmd('keepalt file ' .. self.filename)
   vim.b.term_title = self.filename
+  vim.wo.winfixheight = true
+
+  -- autoclose the termwrapper (no process exited)
   utils.custom_autocmd('TermClose', string.format('lua require("termwrapper").TermWrapper.get(%s):on_close()', self.number), {
     pat = self.filename,
     once = true,
   })
+
   on_new()
   vim.cmd [[set filetype=termwrapper]]
+
   termwrappers[self.number] = self
 
   utils.debug("Created a new termwrapper:")
@@ -89,7 +106,6 @@ end
 -- sets then name of the termwrapper (keeps alternate file)
 function TermWrapper:set_name(name)
   local command = string.format("keepalt call nvim_buf_set_name(%s, \"%s\")", self.bufnr, name)
-  print(command)
   vim.cmd(command)
 end
 
@@ -109,6 +125,7 @@ end
 function TermWrapper:toggle()
   local winid = vim.fn.bufwinid(self.bufnr)
   if winid == -1 then
+    vim.wo.winfixheight = true
     vim.cmd(TermWrapperConfig.default_window_command)
     vim.cmd(self.bufnr .. 'buffer')
     on_toggle()
