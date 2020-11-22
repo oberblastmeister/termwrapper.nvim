@@ -7,53 +7,82 @@ local M = {}
 
 M.TermWrapper = TermWrapper
 
+local function custom_open_window()
+  vim.cmd(TermWrapperConfig.default_window_command)
+end
+
 -- Toggles the termwrapper or creates a new one if there are know termwrappers.
 -- The number arg can be provided to toggle a specific termwrapper but if it is not provided, this will toggle number 1 by default.
 -- If the number is not found, will toggle the first termwrapper found
-function M.toggle_or_first(number)
-  if number == nil then
-    number = 1
-  end
-  local termwrapper = TermWrapper.get(number)
+do
+  -- Both functions rely on previous toggle if number is not given.
+  -- 1 for the start
+  local previous_toggle
 
-  -- if there is not termwrapper for the number, get the first existing termwrapper
-  if termwrapper == nil then
-    termwrapper = TermWrapper.get_first_existing()
+  local function number_or_default(number)
+    -- if no number is given, set it to the previous toggle
+    utils.info("In number_or_default, previous toggle was ", previous_toggle)
+    if number == nil then
+      number = previous_toggle
+    end
+    
+    -- or one if no previous toggle
+    if number == nil then
+      number = 1
+    end
+    
+    return number
   end
 
-  -- if there are no existing termwrappers anywhere, create a new one if the option is set
-  if termwrapper == nil then
-    print('There are no termwrapper existing.')
-  else
-    termwrapper:toggle()
+  -- Toggle the termwrapper of the number or trys to get the first existing termwrapper.
+  -- Fails if there are no termwrappers existing.
+  function M.toggle_or_first(number)
+    number = number_or_default(number)
+    local termwrapper = TermWrapper.get_or_first_existing(number)
+
+    -- set the previous toggle
+    previous_toggle = termwrapper.number
+    utils.info("The previous toggle was set to: ", previous_toggle)
+
+    -- if there are no existing termwrappers anywhere, create a new one if the option is set
+    if termwrapper == nil then
+      print('There are no termwrapper existing.')
+    else
+      termwrapper:toggle()
+    end
+  end
+
+  -- Like the previous function except will create a new one if the number does not exist
+  function M.toggle_or_new(number)
+    number = number_or_default(number)
+    utils.info("number of default was", number)
+    local termwrapper = TermWrapper.get(number)
+
+    -- if the termwrapper is new, create a new one
+    if termwrapper == nil then
+      utils.info("Creating a new termwrapper: ", number)
+      custom_open_window()
+      termwrapper = TermWrapper.new(number)
+    else
+      termwrapper:toggle()
+    end
+
+    previous_toggle = termwrapper.number
+    utils.info("The previous toggle was set to: ", previous_toggle)
   end
 end
 
-function M.toggle_or_new(number)
-  -- defaults to one
-  if number == nil then
-    number = 1
-  end
-
-  local termwrapper = TermWrapper.get(number)
-
-  -- if the termwrapper is new, create a new one
-  if termwrapper == nil then
-    utils.info("Creating a new termwrapper: ", number)
-    M.new(number)
-  else
-    termwrapper:toggle()
+local function get_count()
+  local count = api.nvim_get_vvar("count")
+  if count == 0 then
+    count = nil
   end
 end
 
 function M.toggle_count()
-  local count = api.nvim_get_vvar("count1")
+  local count = get_count()
   utils.debug("The count was: ", count)
   M.toggle_or_new(count)
-end
-
-local function custom_open_window()
-  vim.cmd(TermWrapperConfig.default_window_command)
 end
 
 -- new helper method that opens window

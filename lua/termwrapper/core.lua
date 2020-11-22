@@ -123,5 +123,13 @@ function TermWrapper.get_first_existing()
   return get_first_existing(termwrappers)
 end
 
+function TermWrapper.get_or_first_existing(number)
+  local termwrapper = TermWrapper.get(number)
+  -- if there is not termwrapper for the number, get the first existing termwrapper
+  if termwrapper == nil then
+    termwrapper = TermWrapper.get_first_existing()
+  end
+  return termwrapper
+end
 
 return TermWrapper
