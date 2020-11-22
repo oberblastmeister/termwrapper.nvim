@@ -26,18 +26,21 @@ end
 
 function TermWrapper.current()
   local current_bufnr = api.nvim_get_current_buf()
-  for _, termwrapper in ipairs(termwrappers) do
+  for _, termwrapper in pairs(termwrappers) do
+    utils.debug("Found termwrapper bufnr: ", termwrapper.bufnr)
     if termwrapper.bufnr == current_bufnr then
-      utils.debug("Got current termwrapper:")
+      utils.info("Got current termwrapper:")
       utils.dump_debug(termwrapper)
       return termwrapper
     end
   end
+  utils.info("Failed to get current termwrapper")
 end
 
 -- gets the termwrapper specified by the number. If the number is zero or nil, will get the current termwrapper
 function TermWrapper.get(number)
   if number == nil or number == 0 then
+    utils.info("Getting current termwrapper")
     return TermWrapper.current()
   end
   return termwrappers[number]
@@ -120,7 +123,7 @@ end
 
 -- gets the first existing termwrapper
 function TermWrapper.get_first_existing()
-  return get_first_existing(termwrappers)
+  return utils.get_first_existing(termwrappers)
 end
 
 function TermWrapper.get_or_first_existing(number)

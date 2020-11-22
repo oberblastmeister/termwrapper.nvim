@@ -77,6 +77,7 @@ local function get_count()
   if count == 0 then
     count = nil
   end
+  return count
 end
 
 function M.toggle_count()
