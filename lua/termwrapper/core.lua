@@ -111,7 +111,8 @@ end
 
 function TermWrapper:on_close()
   if TermWrapperConfig.autoclose then
-    api.nvim_feedkeys('q', 'n', true)
+    -- non-blocking feedkeys
+    api.nvim_input('<Esc>')
   end
 
   -- remove the terminal from the global list
