@@ -36,6 +36,7 @@ do
 
   -- Toggle the termwrapper of the number or trys to get the first existing termwrapper.
   -- Fails if there are no termwrappers existing.
+  -- TODO: add detecting the command to this
   function M.toggle_or_first(number)
     number = number_or_default(number)
     local termwrapper = TermWrapper.get_or_first_existing(number)
@@ -53,7 +54,8 @@ do
   end
 
   -- Like the previous function except will create a new one if the number does not exist
-  function M.toggle_or_new(number)
+  -- TODO: add detecting the command to this
+  function M.toggle_or_new(number, command)
     number = number_or_default(number)
     utils.info("number of default was ", number)
     local termwrapper = TermWrapper.get(number)
@@ -61,7 +63,7 @@ do
     -- if the termwrapper is new, create a new one
     if termwrapper == nil then
       utils.info("Creating a new termwrapper: ", number)
-      termwrapper = TermWrapper.new(number, nil)
+      termwrapper = TermWrapper.new(number, command)
     else
       termwrapper:toggle()
     end
@@ -95,24 +97,30 @@ function M.new(number)
   TermWrapper.new(number)
 end
 
-function M.send(...)
-  local opts = vim.tbl_flatten {...}
-  local command = opts[1]
-
-  for idx = 2, vim.tbl_count(opts) do
-    local terminal_num = opts[idx]
-    local terminal = termwrappers[tonumber(terminal_num)];
-    terminal:send(command)
-  end
-
-  if opts[2] == nil then
-    if termwrappers[1] ~= nil then
-      termwrappers[1]:send(command)
-    end
-  end
+function M.send(cmd, number)
+  local termwrapper = TermWrapper.get(number) or TermWrapper.new(number)
+  termwrapper:send(cmd)
 end
+-- function M.send(...)
+--   local opts = vim.tbl_flatten {...}
+--   local command = opts[1]
+
+--   for idx = 2, vim.tbl_count(opts) do
+--     local terminal_num = opts[idx]
+--     local termwrapper = TermWrapper.get(tonumber(terminal_num))
+--     termwrapper:send(command)
+--   end
+
+--   if opts[2] == nil then
+--     if termwrappers[1] ~= nil then
+--       termwrappers[1]:send(command)
+--     end
+--   end
+-- end
 
 function M.send_or_toggle(...)
+  local number = number_or_default()
+  local termwrapper = TermWrapper.get(number)
   if termwrappers[1] == nil then
     toggle()
   end
@@ -156,7 +164,7 @@ function M.setup(user_config)
   utils.augroup('TermWrapper')
 
   if TermWrapperConfig.termwrapper_winenter_autoinsert then
-    utils.custom_autocmd('WinEnter', 'startinsert')
+    utils.custom_autocmd('FileType', 'startinsert')
   end
 end
 

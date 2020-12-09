@@ -47,6 +47,11 @@ function TermWrapper.get(number)
   return termwrappers[number]
 end
 
+--- runs the split command for this termwrapper
+function TermWrapper:split()
+  vim.cmd(self.split_command)
+end
+
 -- creates a new termwrapper in the current window
 function TermWrapper.new(number, split_command)
   local self = setmetatable({}, TermWrapper)
@@ -57,34 +62,28 @@ function TermWrapper.new(number, split_command)
     return
   end
 
+  self.split_command = split_command or TermWrapperConfig.default_window_command
+  self:split()
+  vim.cmd [[terminal]]
+
   -- the number of the terminal, starts from 1
   self.number = number or vim.tbl_count(termwrappers) + 1
-
-  self.split_command = split_command or TermWrapperConfig.default_window_command
-
-  -- the filename of the terminal, can be changed
-  self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
-
-  -- the channel, used to send commands to it
-  self.channel = vim.bo.channel
 
   -- only used when toggling to restore window view
   self.width = api.nvim_win_get_width(0)
   self.height = api.nvim_win_get_height(0)
 
-  vim.cmd(self.split_command)
-
-  vim.cmd [[terminal]]
+  -- the channel, used to send commands to it
+  self.channel = vim.bo.channel
 
   -- the buffer number
   self.bufnr = api.nvim_get_current_buf()
 
   -- change the filename initialy
-  vim.cmd('keepalt file ' .. self.filename)
-  vim.b.term_title = self.filename
-  vim.wo.winfixheight = true
+  self:set_name(self:get_default_name())
 
   -- autoclose the termwrapper (no process exited)
+  -- fix when user changes the filename
   utils.custom_autocmd('TermClose', string.format('lua require("termwrapper").TermWrapper.get(%s):on_close()', self.number), {
     pat = self.filename,
     once = true,
@@ -111,13 +110,24 @@ end
 
 -- sends something to the termwrapper (adds newline at the end)
 function TermWrapper:send(command)
+  utils.debug('Sending to channnel: ', self.channel)
   vim.fn.chansend(self.channel, command .. '\n')
 end
 
 -- sets then name of the termwrapper (keeps alternate file)
 function TermWrapper:set_name(name)
   local command = string.format("keepalt call nvim_buf_set_name(%s, \"%s\")", self.bufnr, name)
+  self.filename = name
   vim.cmd(command)
+end
+
+function TermWrapper:get_default_name()
+  return api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
+end
+
+--- sets the correct window options
+function TermWrapper:set_options()
+  vim.wo.winfixheight = true
 end
 
 function TermWrapper:on_close()
@@ -186,7 +196,6 @@ function TermWrapper:toggle()
     end
     on_toggle()
   else
-    print('closing')
     self:save_size()
     api.nvim_win_close(winid, false)
   end

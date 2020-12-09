@@ -47,7 +47,7 @@ end
 
 do
   local default_autocmd_opts = {
-    pat = "term://*;termwrapper*",
+    pat = "*",
     once = false,
     nested = false,
     group = "TermWrapper",

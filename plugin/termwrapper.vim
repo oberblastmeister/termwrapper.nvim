@@ -18,6 +18,13 @@ command! -nargs=* Ttoggle lua require'termwrapper'.toggle_or_new(<f-args>)
 
 nnoremap <expr> <Plug>(TermWrapperToggleNumber) "lua require'termwrapper'.get_termwrapper(" . v:count1 . '):toggle()'
 
+function! TermWrapperStrategy(cmd)
+  call v:lua.require('termwrapper').send(a:cmd, 1)
+endfunction
+
+let g:test#custom_strategies = {'termwrapper': function('TermWrapperStrategy')}
+let g:test#strategy = 'termwrapper'
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 
