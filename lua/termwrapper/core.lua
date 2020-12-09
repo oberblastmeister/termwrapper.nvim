@@ -2,7 +2,7 @@ local vim = vim
 local api = vim.api
 local utils = require("termwrapper/utils")
 
-TermWrapper = {}
+local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
 -- all of the termwrappers that have been created
@@ -26,6 +26,7 @@ end
 
 function TermWrapper.current()
   local current_bufnr = api.nvim_get_current_buf()
+  utils.debug("Current bufnr: ", current_bufnr)
   for _, termwrapper in pairs(termwrappers) do
     utils.debug("Found termwrapper bufnr: ", termwrapper.bufnr)
     if termwrapper.bufnr == current_bufnr then
@@ -47,17 +48,19 @@ function TermWrapper.get(number)
 end
 
 -- creates a new termwrapper in the current window
-function TermWrapper.new(number)
+function TermWrapper.new(number, split_command)
   local self = setmetatable({}, TermWrapper)
-  vim.cmd [[terminal]]
 
-  if TermWrapper.get(number) ~= nil then
-    utils.error("There is already a termwrapper for the given number: ", number)
+  if number ~= nil and TermWrapper.get(number) ~= nil then
+    print('hello')
+    utils.warning("There is already a termwrapper for the given number: ", number)
     return
   end
 
   -- the number of the terminal, starts from 1
   self.number = number or vim.tbl_count(termwrappers) + 1
+
+  self.split_command = split_command or TermWrapperConfig.default_window_command
 
   -- the filename of the terminal, can be changed
   self.filename = api.nvim_buf_get_name(0) .. ';termwrapper' .. self.number
@@ -65,12 +68,16 @@ function TermWrapper.new(number)
   -- the channel, used to send commands to it
   self.channel = vim.bo.channel
 
-  -- the buffer number
-  self.bufnr = api.nvim_get_current_buf()
-
   -- only used when toggling to restore window view
   self.width = api.nvim_win_get_width(0)
   self.height = api.nvim_win_get_height(0)
+
+  vim.cmd(self.split_command)
+
+  vim.cmd [[terminal]]
+
+  -- the buffer number
+  self.bufnr = api.nvim_get_current_buf()
 
   -- change the filename initialy
   vim.cmd('keepalt file ' .. self.filename)
@@ -82,6 +89,9 @@ function TermWrapper.new(number)
     pat = self.filename,
     once = true,
   })
+
+  local wins = api.nvim_list_wins()
+  self.fullscreen = #wins == 1
 
   on_new()
   vim.cmd [[set filetype=termwrapper]]
@@ -137,6 +147,7 @@ end
 -- resizes the termwrapper to the saved size
 function TermWrapper:resize()
   local winid = self:get_winid()
+  utils.debug("Winid: ", winid)
 
   if winid == nil then
     utils.warning("The buffer does not exist or there is no such window.")
@@ -160,14 +171,22 @@ function TermWrapper:save_size()
 end
 
 function TermWrapper:toggle()
-  local winid = vim.fn.bufwinid(self.bufnr)
-  if winid == -1 then
+  local winid = self:get_winid()
+  if winid == nil then
+    utils.info('opening')
+
     vim.wo.winfixheight = true
-    vim.cmd(TermWrapperConfig.default_window_command)
-    vim.cmd(self.bufnr .. 'buffer')
-    self:resize()
+
+    if self.fullscreen then
+      vim.cmd(self.bufnr .. 'buffer')
+    else
+      vim.cmd(self.split_command)
+      vim.cmd(self.bufnr .. 'buffer')
+      self:resize()
+    end
     on_toggle()
   else
+    print('closing')
     self:save_size()
     api.nvim_win_close(winid, false)
   end
@@ -186,6 +205,7 @@ function TermWrapper.get_or_first_existing(number)
   local termwrapper = TermWrapper.get(number)
   -- if there is not termwrapper for the number, get the first existing termwrapper
   if termwrapper == nil then
+    utils.info("Getting the first existing termwrapper")
     termwrapper = TermWrapper.get_first_existing()
   end
   return termwrapper

@@ -31,7 +31,7 @@ end
 
 function M.warning(...)
   if TermWrapperConfig.log >= 1 then
-    vim.api.nvim_error_write(table.concat(vim.tbl_flatten {...}) .. "\n")
+    vim.api.nvim_err_write(table.concat(vim.tbl_flatten {...}) .. "\n")
   end
 end
 

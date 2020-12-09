@@ -55,14 +55,13 @@ do
   -- Like the previous function except will create a new one if the number does not exist
   function M.toggle_or_new(number)
     number = number_or_default(number)
-    utils.info("number of default was", number)
+    utils.info("number of default was ", number)
     local termwrapper = TermWrapper.get(number)
 
     -- if the termwrapper is new, create a new one
     if termwrapper == nil then
       utils.info("Creating a new termwrapper: ", number)
-      custom_open_window()
-      termwrapper = TermWrapper.new(number)
+      termwrapper = TermWrapper.new(number, nil)
     else
       termwrapper:toggle()
     end
@@ -84,6 +83,10 @@ function M.toggle_count()
   local count = get_count()
   utils.debug("The count was: ", count)
   M.toggle_or_new(count)
+end
+
+function M.close_current()
+  TermWrapper.get(0):toggle()
 end
 
 -- new helper method that opens window
@@ -123,7 +126,7 @@ function M.send_line(terminal_id)
 end
 
 function M.send_line_advance(terminal_id)
-  send_line()
+  M.send_line()
   local linenr = api.nvim_win_get_cursor(0)[1]
   local next_line = api.nvim_buf_get_lines(0, linenr, linenr + 1, false)[1]
   vim.cmd('echom ' .. next_line)
