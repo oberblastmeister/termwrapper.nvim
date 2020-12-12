@@ -22,9 +22,6 @@ function! TermWrapperStrategy(cmd)
   call v:lua.require('termwrapper').send(a:cmd, 1)
 endfunction
 
-let g:test#custom_strategies = {'termwrapper': function('TermWrapperStrategy')}
-let g:test#strategy = 'termwrapper'
-
 let &cpo = s:save_cpo
 unlet s:save_cpo
 

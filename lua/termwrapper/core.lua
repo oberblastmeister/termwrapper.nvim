@@ -164,8 +164,11 @@ function TermWrapper:resize()
     return
   end
 
-  api.nvim_win_set_height(winid, self.height)
-  api.nvim_win_set_width(winid, self.width)
+  if self.split_command:find("vsplit") then
+    api.nvim_win_set_width(winid, self.width)
+  else
+    api.nvim_win_set_height(winid, self.height)
+  end
 end
 
 function TermWrapper:save_size()
