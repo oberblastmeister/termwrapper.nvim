@@ -7,7 +7,7 @@ do
     toggle_autoinsert = true,
     autoclose = true,
     winenter_autoinsert = false,
-    default_window_command = "belowright 13split",
+    default_window_command = "botright 13split",
     open_new_toggle = true,
     log_level = 0,
   }
