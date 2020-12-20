@@ -1,7 +1,8 @@
 local vim = vim
 local api = vim.api
 local utils = require("termwrapper/utils")
-local TermWrapper = require("termwrapper/core")
+local TermWrapper = require("termwrapper/core").TermWrapper
+local TermWrapperList = require("termwrapper/core").TermWrapperList
 
 local M = {}
 

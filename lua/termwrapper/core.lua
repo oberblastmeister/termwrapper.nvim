@@ -6,7 +6,29 @@ local TermWrapper = {}
 TermWrapper.__index = TermWrapper
 
 -- all of the termwrappers that have been created
-local termwrappers = {}
+local TermWrapperList = {}
+
+--- private fields
+-- do
+--   local previous_action_number = 1
+--   local termwrappers
+
+--   function TermWrapperList:save(termwrapper)
+--     termwrappers[termwrapper.number] = termwrapper
+--   end
+
+--   function TermWrapperList:save_previous_action(number)
+--     previous_action_number = number
+--   end
+
+--   function TermWrapperList:previous_action()
+--     return previous_action_number
+--   end
+
+--   function TermWrapperList:iter()
+--     return pairs(termwrappers)
+--   end
+-- end
 
 -- commands to execute when toggling
 local function on_toggle()
@@ -27,7 +49,7 @@ end
 function TermWrapper.current()
   local current_bufnr = api.nvim_get_current_buf()
   utils.debug("Current bufnr: ", current_bufnr)
-  for _, termwrapper in pairs(termwrappers) do
+  for _, termwrapper in pairs(TermWrapperList) do
     utils.debug("Found termwrapper bufnr: ", termwrapper.bufnr)
     if termwrapper.bufnr == current_bufnr then
       utils.info("Got current termwrapper:")
@@ -44,7 +66,7 @@ function TermWrapper.get(number)
     utils.info("Getting current termwrapper")
     return TermWrapper.current()
   end
-  return termwrappers[number]
+  return TermWrapperList[number]
 end
 
 --- runs the split command for this termwrapper
@@ -66,8 +88,10 @@ function TermWrapper.new(number, split_command)
   self:split()
   vim.cmd [[terminal]]
 
+  self:set_options()
+
   -- the number of the terminal, starts from 1
-  self.number = number or vim.tbl_count(termwrappers) + 1
+  self.number = number or vim.tbl_count(TermWrapperList) + 1
 
   -- only used when toggling to restore window view
   self.width = api.nvim_win_get_width(0)
@@ -95,7 +119,7 @@ function TermWrapper.new(number, split_command)
   on_new()
   vim.cmd [[set filetype=termwrapper]]
 
-  termwrappers[self.number] = self
+  TermWrapperList[self.number] = self
 
   utils.debug("Created a new termwrapper:")
   utils.dump_debug(self)
@@ -137,7 +161,7 @@ function TermWrapper:on_close()
   end
 
   -- remove the terminal from the global list
-  termwrappers[self.number] = nil
+  TermWrapperList[self.number] = nil
 end
 
 function TermWrapper:exit()
@@ -210,7 +234,7 @@ end
 
 -- gets the first existing termwrapper
 function TermWrapper.get_first_existing()
-  return utils.get_first_existing(termwrappers)
+  return utils.get_first_existing(TermWrapperList)
 end
 
 function TermWrapper.get_or_first_existing(number)
@@ -223,4 +247,8 @@ function TermWrapper.get_or_first_existing(number)
   return termwrapper
 end
 
-return TermWrapper
+return {
+  TermWrapperList = TermWrapperList,
+  TermWrapper = TermWrapper,
+}
+-- return TermWrapper
