@@ -221,6 +221,7 @@ function TermWrapper:toggle()
       vim.cmd(self.bufnr .. 'buffer')
       self:resize()
     end
+    self:set_options()
     on_toggle()
   else
     self:save_size()
