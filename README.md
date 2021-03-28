@@ -41,7 +41,7 @@ require"termwrapper".setup {
     default_window_command = "belowright 13split", -- the default window command to run when none is specified,
                                                    -- opens a window in the bottom
     open_new_toggle = true, -- open a new terminal if the toggle target does not exist
-    log_level = 1, -- 1 = warning, 2 = info, 3 = debug
+    log = 1, -- 1 = warning, 2 = info, 3 = debug
 }
 ```
 
@@ -54,13 +54,13 @@ let g:test#custom_strategies = {'termwrapper': function('TermWrapperStrategy')}
 let g:test#strategy = 'termwrapper'
 ```
 
-<!-- ## Commands -->
+## Commands
 
-<!-- - `T`: create a new termwrapper -->
-<!-- - `Ttoggle`: toggle the termwrapper -->
-<!-- - `TsendLine`: send the current line to the termwrapper -->
-<!-- - `Tsend`: send argument to the terminal -->
-<!-- - `TsendLineAdvance`: same as `TsendLine` but goes to the next non-empty line in the file -->
+- `T`: create a new termwrapper
+- `Ttoggle`: toggle the termwrapper
+- `TsendLine`: send the current line to the termwrapper
+- `Tsend`: send argument to the terminal
+- `TsendLineAdvance`: same as `TsendLine` but goes to the next non-empty line in the file
 
 <!-- ## Options -->
 
